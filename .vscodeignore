@@ -1,0 +1,15 @@
+node_modules/**/*
+!node_modules/@types/**
+
+src/**
+.vscode/**
+coverage/**
+dist/**
+*.map
+*.log
+.gitignore
+.eslintrc.*
+eslint.config.*
+.prettier*
+tsconfig.*
+.vscode-test/**

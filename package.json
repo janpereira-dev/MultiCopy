@@ -1,8 +1,13 @@
 {
-  "name": "vscode-multicopy",
+  "name": "multicopy",
   "displayName": "MultiCopy: copiar archivos como bloque",
-  "publisher": "tu-editor",
+  "publisher": "janpereira-dev",
   "version": "0.0.1",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/janpereira-dev/MultiCopy.git" },
+  "bugs": { "url": "https://github.com/janpereira-dev/MultiCopy/issues" },
+  "homepage": "https://github.com/janpereira-dev/MultiCopy#readme",
+  "description": "Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un solo bloque de texto, incluyendo sus rutas y contenidos.",
   "engines": {
     "vscode": "^1.93.0"
   },
