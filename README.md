@@ -4,10 +4,11 @@
 - Click derecho → “Copiar selección como bloque”.
 - Se copia al portapapeles con el formato:
 
-  ````
+  ````text
   ruta/archivo.ext
   ```<lang>
   contenido
+  ```
   ````
 
 - Respeta `multicopy.maxBytes`. Omite binarios. Puede truncar el último archivo.

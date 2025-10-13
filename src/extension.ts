@@ -2,31 +2,27 @@ import * as vscode from 'vscode';
 
 import { Minimatch } from 'minimatch';
 
-function langFromExt(path: string): string {
+function extFromPath(path: string): string {
   const ext = path.split('.').pop()?.toLowerCase() || '';
-  const map: Record<string, string> = {
-    ts: 'ts',
-    tsx: 'tsx',
-    js: 'js',
-    jsx: 'jsx',
-    json: 'json',
-    html: 'html',
-    css: 'css',
-    scss: 'scss',
-    md: 'md',
-    yml: 'yaml',
-    yaml: 'yaml',
-    sh: 'bash',
-    ps1: 'powershell',
-    py: 'python',
-    java: 'java',
-    kt: 'kotlin',
-    go: 'go',
-    rs: 'rust',
-    cpp: 'cpp',
-    c: 'c',
-  };
-  return map[ext] ?? '';
+  return ext;
+}
+
+// Solo permitimos lenguaje en el bloque para: ts, js, python, java.
+function fenceLangFromExt(ext: string): string {
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+      return 'ts';
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'py':
+      return 'python';
+    case 'java':
+      return 'java';
+    default:
+      return '';
+  }
 }
 
 function seemsBinary(buf: Uint8Array): boolean {
@@ -83,12 +79,19 @@ export function activate(context: vscode.ExtensionContext) {
     'multicopy.copyAsBundle',
     async (single?: vscode.Uri, multi?: vscode.Uri[]) => {
       const cfg = vscode.workspace.getConfiguration('multicopy');
-      const maxBytes = Math.max(1024, Number(cfg.get<number>('maxBytes') || 200000));
-      const includeHeaders = Boolean(cfg.get<boolean>('includeHeaders'));
+      const maxBytes = Math.max(1024, Number(cfg.get<number>('maxBytes') || 20000000));
+      // Siempre incluiremos encabezados bajo el nuevo formato solicitado.
       const separator = String(cfg.get<string>('separator') || '\n\n');
       const ignoreGlobs = (cfg.get<string[]>('ignoreGlobs') || []).filter(Boolean);
+      const excludeMarkdown = Boolean(cfg.get<boolean>('excludeMarkdown') ?? true);
+      const maxJsonBytes = Math.max(1024, Number(cfg.get<number>('maxJsonBytes') || 200000));
 
-      const selected = Array.isArray(multi) && multi.length ? multi : single ? [single] : [];
+      let selected: vscode.Uri[] = [];
+      if (Array.isArray(multi) && multi.length) {
+        selected = multi;
+      } else if (single) {
+        selected = [single];
+      }
       if (!selected.length) {
         vscode.window.showInformationMessage(
           'No hay selección. Usa click derecho en el Explorador.',
@@ -108,6 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
       let total = 0;
       const chunks: string[] = [];
       let skippedBinary = 0;
+      let skippedExcluded = 0;
       let truncated = false;
 
       for (const uri of files) {
@@ -117,23 +121,61 @@ export function activate(context: vscode.ExtensionContext) {
           continue;
         }
 
-        const lang = langFromExt(uri.fsPath);
-        const header = includeHeaders ? `${uri.fsPath}\n\`\`\`${lang}\n` : `\`\`\`${lang}\n`;
-        const footer = `\n\`\`\``;
+        const ext = extFromPath(uri.fsPath);
+        if (excludeMarkdown && ext === 'md') {
+          skippedExcluded++;
+          continue;
+        }
 
-        const block = header + content + footer;
+        // tamaño real del archivo
+        let sizeBytes = 0;
+        try {
+          const st = await vscode.workspace.fs.stat(uri);
+          sizeBytes = Number(st.size || 0);
+        } catch {
+          sizeBytes = new TextEncoder().encode(content).length;
+        }
+
+        // ruta relativa al workspace
+        const relPath = vscode.workspace.asRelativePath(uri, false);
+
+        // truncado especial para JSON muy largos
+        let body = content;
+        if (ext === 'json') {
+          const enc = new TextEncoder();
+          const dec = new TextDecoder();
+          const bytes = enc.encode(body);
+          if (bytes.length > maxJsonBytes) {
+            const slice = bytes.slice(0, Math.max(0, maxJsonBytes - 64));
+            body = dec.decode(slice) + '\n/* ...JSON truncado... */';
+          }
+        }
+
+        const fenceLang = fenceLangFromExt(ext);
+        const codeOpen = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
+        const codeClose = `\n\`\`\``;
+
+        const meta = `Nombre: ${uri.fsPath}\nTamaño: ${sizeBytes} bytes\nRuta relativa: ${relPath}\n`;
+        const block = meta + codeOpen + body + codeClose;
         const nextSize = new TextEncoder().encode(block + separator).length;
 
         if (total + nextSize > maxBytes) {
           // intentar meter truncado del último archivo si aún no hay nada
           if (chunks.length === 0) {
             // calcula cuánto cabe
-            const available = maxBytes - new TextEncoder().encode(header + footer).length;
+            const headerBytes = new TextEncoder().encode(
+              meta + (fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`) + `\n\`\`\``,
+            ).length;
+            const available = maxBytes - headerBytes;
             if (available > 0) {
-              const raw = new TextEncoder().encode(content);
+              const raw = new TextEncoder().encode(body);
               const slice = raw.slice(0, Math.max(0, available - 32)); // margen para el marcador
               const partial =
-                header + new TextDecoder().decode(slice) + '\n/* ...truncado... */' + footer;
+                meta +
+                codeOpen +
+                new TextDecoder().decode(slice) +
+                '\n/* ...truncado... */' +
+                codeClose;
               chunks.push(partial);
               total = maxBytes;
               truncated = true;
@@ -157,6 +199,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       const noteParts: string[] = [`Copiados ${chunks.length} archivo(s)`, `~${total} bytes`];
       if (skippedBinary) noteParts.push(`${skippedBinary} omitido(s) por binarios`);
+      if (skippedExcluded) noteParts.push(`${skippedExcluded} omitido(s) por filtro`);
       if (truncated) noteParts.push('contenido truncado por límite');
       vscode.window.showInformationMessage(noteParts.join(' · '));
     },
@@ -165,4 +208,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(cmd);
 }
 
-export function deactivate() {}
+export function deactivate(): void {
+  // noop
+}

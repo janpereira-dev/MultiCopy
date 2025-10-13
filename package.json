@@ -3,9 +3,15 @@
   "displayName": "MultiCopy: copiar archivos como bloque",
   "publisher": "janpereira-dev",
   "version": "0.0.1",
+  "icon": "media/logo.png",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/janpereira-dev/MultiCopy.git" },
-  "bugs": { "url": "https://github.com/janpereira-dev/MultiCopy/issues" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janpereira-dev/MultiCopy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/janpereira-dev/MultiCopy/issues"
+  },
   "homepage": "https://github.com/janpereira-dev/MultiCopy#readme",
   "description": "Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un solo bloque de texto, incluyendo sus rutas y contenidos.",
   "engines": {
@@ -15,14 +21,15 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:multicopy.copyAsBundle"
+    "onCommand:multicopy.copyAsBundle",
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "multicopy.copyAsBundle",
-        "title": "Copiar selección como bloque"
+        "title": "Copiar selección como bloque++"
       }
     ],
     "menus": {
@@ -38,7 +45,7 @@
       "properties": {
         "multicopy.maxBytes": {
           "type": "number",
-          "default": 200000,
+          "default": 20000000,
           "minimum": 1024,
           "description": "Límite máximo de bytes a copiar en total."
         },
@@ -51,6 +58,17 @@
           "type": "string",
           "default": "\n\n",
           "description": "Separador entre archivos."
+        },
+        "multicopy.excludeMarkdown": {
+          "type": "boolean",
+          "default": true,
+          "description": "Excluir archivos Markdown (.md) del copiado."
+        },
+        "multicopy.maxJsonBytes": {
+          "type": "number",
+          "default": 200000,
+          "minimum": 1024,
+          "description": "Tamaño máximo en bytes para incluir JSON completo; si se excede se truncará."
         },
         "multicopy.ignoreGlobs": {
           "type": "array",
@@ -98,6 +116,9 @@
     "globals": "^16.4.0",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "minimatch": "^9.0.5"
   },
   "scripts": {
     "build": "tsc -p ./",
