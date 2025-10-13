@@ -1,0 +1,106 @@
+{
+  "name": "vscode-multicopy",
+  "displayName": "MultiCopy: copiar archivos como bloque",
+  "publisher": "tu-editor",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:multicopy.copyAsBundle"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "multicopy.copyAsBundle",
+        "title": "Copiar selección como bloque"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "multicopy.copyAsBundle",
+          "group": "navigation@100"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MultiCopy",
+      "properties": {
+        "multicopy.maxBytes": {
+          "type": "number",
+          "default": 200000,
+          "minimum": 1024,
+          "description": "Límite máximo de bytes a copiar en total."
+        },
+        "multicopy.includeHeaders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Incluir cabecera con ruta por archivo."
+        },
+        "multicopy.separator": {
+          "type": "string",
+          "default": "\n\n",
+          "description": "Separador entre archivos."
+        },
+        "multicopy.ignoreGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/*.png",
+            "**/*.jpg",
+            "**/*.jpeg",
+            "**/*.gif",
+            "**/*.pdf",
+            "**/*.zip"
+          ],
+          "description": "Globs a ignorar."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "multicopy.copyAsBundle",
+        "key": "ctrl+alt+c",
+        "when": "filesExplorerFocus"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.4.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.37.0",
+    "@types/minimatch": "^5.1.2",
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^3.0.0",
+    "eslint": "^9.11.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^16.4.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "vscode:prepublish": "tsc -p ./",
+    "package": "vsce package",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier -w .",
+    "check:format": "prettier -c ."
+  }
+}

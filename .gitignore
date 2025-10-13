@@ -1,0 +1,26 @@
+# Node
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Build / tests
+out/
+dist/
+coverage/
+.vscode-test/
+
+# VSIX
+*.vsix
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Misc
+.env
+*.log
