@@ -1,3 +1,4 @@
+import { basename } from 'path';
 import * as vscode from 'vscode';
 
 import { Minimatch } from 'minimatch';
@@ -7,22 +8,102 @@ function extFromPath(path: string): string {
   return ext;
 }
 
-// Solo permitimos lenguaje en el bloque para: ts, js, python, java.
+// Determina el lenguaje del fence: mapeo amplio y fallback a la extensión si es válida
 function fenceLangFromExt(ext: string): string {
-  switch (ext) {
-    case 'ts':
-    case 'tsx':
-      return 'ts';
-    case 'js':
-    case 'jsx':
-      return 'javascript';
-    case 'py':
-      return 'python';
-    case 'java':
-      return 'java';
-    default:
-      return '';
-  }
+  const map: Record<string, string> = {
+    // JS/TS
+    ts: 'ts',
+    tsx: 'ts',
+    js: 'javascript',
+    jsx: 'javascript',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    json: 'json',
+    jsonc: 'jsonc',
+
+    // Markdown y variantes
+    md: 'markdown',
+    markdown: 'markdown',
+    mdown: 'markdown',
+    mkd: 'markdown',
+    mkdn: 'markdown',
+    mdwn: 'markdown',
+    mdtxt: 'markdown',
+    mdtext: 'markdown',
+    rmd: 'markdown',
+    mdx: 'mdx',
+
+    // Web
+    html: 'html',
+    htm: 'html',
+    css: 'css',
+    scss: 'scss',
+    less: 'less',
+
+    // Shell / scripts
+    sh: 'bash',
+    bash: 'bash',
+    zsh: 'bash',
+    ps1: 'powershell',
+    ps: 'powershell',
+
+    // YAML
+    yml: 'yaml',
+    yaml: 'yaml',
+
+    // Python / Java
+    py: 'python',
+    java: 'java',
+
+    // C/C++/C#
+    c: 'c',
+    h: 'c',
+    cpp: 'cpp',
+    cxx: 'cpp',
+    cc: 'cpp',
+    hpp: 'cpp',
+    hh: 'cpp',
+    hxx: 'cpp',
+    cs: 'csharp',
+
+    // Otros lenguajes populares
+    go: 'go',
+    rs: 'rust',
+    kt: 'kotlin',
+    kts: 'kotlin',
+    swift: 'swift',
+    rb: 'ruby',
+    php: 'php',
+    scala: 'scala',
+    dart: 'dart',
+    lua: 'lua',
+    r: 'r',
+    pl: 'perl',
+    pm: 'perl',
+    ex: 'elixir',
+    exs: 'elixir',
+    erl: 'erlang',
+    sql: 'sql',
+    toml: 'toml',
+    ini: 'ini',
+    conf: 'ini',
+    cfg: 'ini',
+
+    // Frontend frameworks
+    vue: 'vue',
+    svelte: 'svelte',
+    astro: 'astro',
+
+    // Infra/CI
+    dockerfile: 'dockerfile',
+    tf: 'hcl',
+    hcl: 'hcl',
+  };
+
+  if (map[ext]) return map[ext];
+  // Fallback: si la extensión es un identificador razonable para markdown, usarla
+  if (/^[a-z0-9+-]+$/i.test(ext)) return ext.toLowerCase();
+  return '';
 }
 
 function seemsBinary(buf: Uint8Array): boolean {
@@ -80,11 +161,12 @@ export function activate(context: vscode.ExtensionContext) {
     async (single?: vscode.Uri, multi?: vscode.Uri[]) => {
       const cfg = vscode.workspace.getConfiguration('multicopy');
       const maxBytes = Math.max(1024, Number(cfg.get<number>('maxBytes') || 20000000));
-      // Siempre incluiremos encabezados bajo el nuevo formato solicitado.
       const separator = String(cfg.get<string>('separator') || '\n\n');
       const ignoreGlobs = (cfg.get<string[]>('ignoreGlobs') || []).filter(Boolean);
       const excludeMarkdown = Boolean(cfg.get<boolean>('excludeMarkdown') ?? true);
       const maxJsonBytes = Math.max(1024, Number(cfg.get<number>('maxJsonBytes') || 200000));
+      const includeHeaders = Boolean(cfg.get<boolean>('includeHeaders') ?? true);
+      const metadataInsideFence = Boolean(cfg.get<boolean>('metadataInsideFence') ?? false);
 
       let selected: vscode.Uri[] = [];
       if (Array.isArray(multi) && multi.length) {
@@ -127,7 +209,6 @@ export function activate(context: vscode.ExtensionContext) {
           continue;
         }
 
-        // tamaño real del archivo
         let sizeBytes = 0;
         try {
           const st = await vscode.workspace.fs.stat(uri);
@@ -139,7 +220,6 @@ export function activate(context: vscode.ExtensionContext) {
         // ruta relativa al workspace
         const relPath = vscode.workspace.asRelativePath(uri, false);
 
-        // truncado especial para JSON muy largos
         let body = content;
         if (ext === 'json') {
           const enc = new TextEncoder();
@@ -154,28 +234,38 @@ export function activate(context: vscode.ExtensionContext) {
         const fenceLang = fenceLangFromExt(ext);
         const codeOpen = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
         const codeClose = `\n\`\`\``;
-
-        const meta = `Nombre: ${uri.fsPath}\nTamaño: ${sizeBytes} bytes\nRuta relativa: ${relPath}\n`;
-        const block = meta + codeOpen + body + codeClose;
+        const fileName = basename(uri.fsPath);
+        const meta = `- Nombre: \`${fileName}\`\n- Tamaño: \`${sizeBytes} bytes\`\n- Ruta relativa: \`${relPath}\`\n`;
+        let block: string;
+        if (includeHeaders) {
+          block = metadataInsideFence
+            ? codeOpen + meta + body + codeClose
+            : meta + codeOpen + body + codeClose;
+        } else {
+          block = codeOpen + body + codeClose;
+        }
         const nextSize = new TextEncoder().encode(block + separator).length;
 
         if (total + nextSize > maxBytes) {
           // intentar meter truncado del último archivo si aún no hay nada
           if (chunks.length === 0) {
-            // calcula cuánto cabe
-            const headerBytes = new TextEncoder().encode(
-              meta + (fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`) + `\n\`\`\``,
-            ).length;
-            const available = maxBytes - headerBytes;
+            // Construimos prefijo/sufijo según configuración para preservar formato en truncado
+            const enc = new TextEncoder();
+            const dec = new TextDecoder();
+            const open = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
+            const prefix = includeHeaders
+              ? metadataInsideFence
+                ? open + meta
+                : meta + open
+              : open;
+            const suffixReal = `\n/* ...truncado... */` + codeClose;
+            const overhead = enc.encode(prefix).length + enc.encode(suffixReal).length;
+            const available = maxBytes - overhead;
             if (available > 0) {
               const raw = new TextEncoder().encode(body);
-              const slice = raw.slice(0, Math.max(0, available - 32)); // margen para el marcador
-              const partial =
-                meta +
-                codeOpen +
-                new TextDecoder().decode(slice) +
-                '\n/* ...truncado... */' +
-                codeClose;
+              const slice = raw.slice(0, Math.max(0, available));
+              const bodyPart = dec.decode(slice);
+              const partial = prefix + bodyPart + suffixReal;
               chunks.push(partial);
               total = maxBytes;
               truncated = true;
@@ -186,7 +276,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
         chunks.push(block);
         total += nextSize;
-        // añadir separador salvo para el último más tarde
       }
 
       const finalText = chunks.join(separator);

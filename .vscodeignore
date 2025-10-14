@@ -1,14 +1,28 @@
+# === INCLUDES EXPLÍCITOS (orden importa) ===
+!media/**
+!README.md
+!LICENSE
+!package.json
 !media/**
 
-src/**
+
+# === EXCLUSIONES GENERALES ===
+.vscode-test/**
 .vscode/**
 coverage/**
 dist/**
-*.map
-*.log
-.gitignore
+node_modules/**
+scripts/**
+src/**
+test/**
+tests/**
+
+# === ARCHIVOS SUELTOS ===
 .eslintrc.*
-eslint.config.*
+.gitignore
 .prettier*
+*.log
+*.map
+*.vsix
+eslint.config.*
 tsconfig.*
-.vscode-test/**

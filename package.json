@@ -1,6 +1,6 @@
 {
   "name": "multicopy",
-  "displayName": "MultiCopy: copiar archivos como bloque",
+  "displayName": "MultiCopy: copiar archivos en bloque",
   "publisher": "janpereira-dev",
   "version": "0.0.1",
   "icon": "media/logo.png",
@@ -25,11 +25,29 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "preview": true,
+  "keywords": [
+    "copy",
+    "clipboard",
+    "bundle",
+    "files",
+    "explorer"
+  ],
+  "qna": false,
+  "extensionKind": [
+    "ui"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "Solo lee archivos."
+    }
+  },
   "contributes": {
     "commands": [
       {
         "command": "multicopy.copyAsBundle",
-        "title": "Copiar selección como bloque++"
+        "title": "Copiar selección como bloque"
       }
     ],
     "menus": {
@@ -49,15 +67,20 @@
           "minimum": 1024,
           "description": "Límite máximo de bytes a copiar en total."
         },
-        "multicopy.includeHeaders": {
-          "type": "boolean",
-          "default": true,
-          "description": "Incluir cabecera con ruta por archivo."
-        },
         "multicopy.separator": {
           "type": "string",
           "default": "\n\n",
           "description": "Separador entre archivos."
+        },
+        "multicopy.includeHeaders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Incluir metadatos (Nombre/Tamaño/Ruta relativa) por archivo."
+        },
+        "multicopy.metadataInsideFence": {
+          "type": "boolean",
+          "default": false,
+          "description": "Si es true, los metadatos se colocan dentro del bloque de código; si es false, afuera."
         },
         "multicopy.excludeMarkdown": {
           "type": "boolean",
@@ -97,6 +120,7 @@
       }
     ]
   },
+  "type": "commonjs",
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
     "@eslint/eslintrc": "^3.3.1",
@@ -107,7 +131,8 @@
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
     "@vscode/test-electron": "^2.3.9",
-    "@vscode/vsce": "^3.0.0",
+    "@vscode/vsce": "^3.6.2",
+    "esbuild": "^0.25.10",
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -121,8 +146,8 @@
     "minimatch": "^9.0.5"
   },
   "scripts": {
-    "build": "tsc -p ./",
-    "vscode:prepublish": "tsc -p ./",
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=out/extension.js",
+    "vscode:prepublish": "npm run build",
     "package": "vsce package",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
