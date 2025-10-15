@@ -4,6 +4,10 @@
   "publisher": "janpereira-dev",
   "version": "0.0.1",
   "icon": "media/logo.png",
+    "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/janpereira-dev/MultiCopy/issues"
   },
-  "homepage": "https://github.com/janpereira-dev/MultiCopy#readme",
+  "homepage": "https://github.com/janpereira-dev/MultiCopy#README.md",
   "description": "Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un solo bloque de texto, incluyendo sus rutas y contenidos.",
   "engines": {
     "vscode": "^1.93.0"
@@ -120,6 +124,7 @@
       }
     ]
   },
+  "files": ["out/**", "media/**", "README.md", "LICENSE", "package.json"],
   "type": "commonjs",
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
@@ -148,7 +153,7 @@
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=out/extension.js",
     "vscode:prepublish": "npm run build",
-    "package": "vsce package",
+    "package": "npm run build & npx vsce package",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier -w .",

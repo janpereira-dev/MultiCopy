@@ -1,4 +1,9 @@
-# `README.md` (uso rápido)
+# MultiCopy
+
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
+[![Rating](https://vsmarketplacebadges.dev/rating-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
+
 
 - Selecciona varios archivos y/o carpetas en el Explorador.
 - Click derecho → “Copiar selección como bloque”.

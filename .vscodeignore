@@ -1,4 +1,4 @@
-# === INCLUDES EXPLÍCITOS (orden importa) ===
+!out/**
 !media/**
 !README.md
 !LICENSE
