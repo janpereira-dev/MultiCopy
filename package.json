@@ -1,6 +1,7 @@
 {
   "name": "multicopynator",
-  "displayName": "%ext.displayName%", "description": "%ext.description%",
+  "displayName": "%ext.displayName%",
+  "description": "%ext.description%",
   "publisher": "janpereira-dev",
   "version": "0.0.1",
   "icon": "media/logo.png",
