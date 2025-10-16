@@ -1,0 +1,15 @@
+{
+  "languageId": "en",
+  "contents": {
+    "No selection. Use Explorer context menu.": "No selection. Use Explorer context menu.",
+    "Nothing to copy after filters.": "Nothing to copy after filters.",
+    "Nothing copied. Binary files or very low limit.": "Nothing copied. Binary files or very low limit.",
+    "Copied {0} file(s) · ~{1} bytes": "Copied {0} file(s) · ~{1} bytes",
+    "{0} skipped (binary)": "{0} skipped (binary)",
+    "{0} skipped (excluded)": "{0} skipped (excluded)",
+    "content truncated by limit": "content truncated by limit",
+    "Name": "Name",
+    "Size": "Size",
+    "Relative path": "Relative path"
+  }
+}

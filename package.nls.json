@@ -1,0 +1,13 @@
+{
+  "cmd.copyAsBundle": "Copy selection as bundle",
+  "cfg.title": "MultiCopyneitor",
+  "cfg.maxBytes.desc": "Maximum total bytes to copy.",
+  "cfg.separator.desc": "Separator between files.",
+  "cfg.includeHeaders.desc": "Include metadata (Name/Size/Relative path) per file.",
+  "cfg.metadataInsideFence.desc": "If true, metadata is placed inside the code block; if false, outside.",
+  "cfg.excludeMarkdown.desc": "Exclude Markdown (.md) files from copying.",
+  "cfg.maxJsonBytes.desc": "Max bytes to include full JSON; larger files will be truncated.",
+  "cfg.ignoreGlobs.desc": "Glob patterns to ignore.",
+  "ext.displayName": "MultiCopyneitor: copy files as bundle",
+  "ext.description": "VS Code extension to copy multiple files and folders as a single text block, including their paths and contents."
+}

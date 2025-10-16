@@ -1,9 +1,8 @@
-# MultiCopy
+# MultiCopyneitor
 
-[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
-[![Installs](https://vsmarketplacebadges.dev/installs-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
-[![Rating](https://vsmarketplacebadges.dev/rating-short/janpereira-dev.multicopy.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopy)
-
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/janpereira-dev.multicopyneitor.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopyneitor)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/janpereira-dev.multicopyneitor.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopyneitor)
+[![Rating](https://vsmarketplacebadges.dev/rating-short/janpereira-dev.multicopyneitor.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopyneitor)
 
 - Selecciona varios archivos y/o carpetas en el Explorador.
 - Click derecho → “Copiar selección como bloque”.
@@ -16,7 +15,7 @@
   ```
   ````
 
-- Respeta `multicopy.maxBytes`. Omite binarios. Puede truncar el último archivo.
+- Respeta `multicopyneitor.maxBytes`. Omite binarios. Puede truncar el último archivo.
 
 # Instalación local
 

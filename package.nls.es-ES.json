@@ -1,0 +1,13 @@
+{
+  "cmd.copyAsBundle": "Copiar selección como bloque",
+  "cfg.title": "MultiCopyneitor",
+  "cfg.maxBytes.desc": "Límite máximo de bytes a copiar en total.",
+  "cfg.separator.desc": "Separador entre archivos.",
+  "cfg.includeHeaders.desc": "Incluir metadatos (Nombre/Tamaño/Ruta relativa) por archivo.",
+  "cfg.metadataInsideFence.desc": "Si es true, los metadatos se colocan dentro del bloque de código; si es false, afuera.",
+  "cfg.excludeMarkdown.desc": "Excluir archivos Markdown (.md) del copiado.",
+  "cfg.maxJsonBytes.desc": "Tamaño máximo en bytes para incluir JSON completo; si se excede se truncará.",
+  "cfg.ignoreGlobs.desc": "Globs a ignorar.",
+  "ext.displayName": "MultiCopyneitor: copiar archivos en bloque",
+  "ext.description": "Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un solo bloque de texto, incluyendo sus rutas y contenidos."
+}

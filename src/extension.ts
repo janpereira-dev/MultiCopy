@@ -1,6 +1,8 @@
 import { basename } from 'path';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
+import * as l10n from '@vscode/l10n';
 import { Minimatch } from 'minimatch';
 
 function extFromPath(path: string): string {
@@ -8,7 +10,6 @@ function extFromPath(path: string): string {
   return ext;
 }
 
-// Determina el lenguaje del fence: mapeo amplio y fallback a la extensión si es válida
 function fenceLangFromExt(ext: string): string {
   const map: Record<string, string> = {
     // JS/TS
@@ -99,11 +100,9 @@ function fenceLangFromExt(ext: string): string {
     tf: 'hcl',
     hcl: 'hcl',
   };
-
   if (map[ext]) return map[ext];
-  // Fallback: si la extensión es un identificador razonable para markdown, usarla
   if (/^[a-z0-9+-]+$/i.test(ext)) return ext.toLowerCase();
-  return '';
+  return 'txt';
 }
 
 function seemsBinary(buf: Uint8Array): boolean {
@@ -112,7 +111,6 @@ function seemsBinary(buf: Uint8Array): boolean {
     const b = buf[i];
     if (b === 0) return true;
   }
-  // heurística simple: demasiados control chars no comunes
   let ctrls = 0;
   for (let i = 0; i < len; i++) {
     const b = buf[i];
@@ -133,10 +131,7 @@ async function readText(uri: vscode.Uri): Promise<string | null> {
 
 function filterIgnored(uris: vscode.Uri[], ignoreGlobs: string[]): vscode.Uri[] {
   if (ignoreGlobs.length === 0) return uris;
-  const matchers = ignoreGlobs.map(
-    (g) => new Minimatch(g, { dot: true, nocase: true, nocomment: true }),
-  );
-  // replaceAll no está disponible en ES2020, usamos split/join para compatibilidad
+  const matchers = ignoreGlobs.map((g) => new Minimatch(g, { dot: true, nocase: true, nocomment: true }));
   return uris.filter((u) => !matchers.some((mm) => mm.match(u.fsPath.split('\\').join('/'))));
 }
 
@@ -155,144 +150,135 @@ async function flattenSelection(uris: vscode.Uri[]): Promise<vscode.Uri[]> {
   return out;
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  const cmd = vscode.commands.registerCommand(
-    'multicopy.copyAsBundle',
-    async (single?: vscode.Uri, multi?: vscode.Uri[]) => {
-      const cfg = vscode.workspace.getConfiguration('multicopy');
-      const maxBytes = Math.max(1024, Number(cfg.get<number>('maxBytes') || 20000000));
-      const separator = String(cfg.get<string>('separator') || '\n\n');
-      const ignoreGlobs = (cfg.get<string[]>('ignoreGlobs') || []).filter(Boolean);
-      const excludeMarkdown = Boolean(cfg.get<boolean>('excludeMarkdown') ?? true);
-      const maxJsonBytes = Math.max(1024, Number(cfg.get<number>('maxJsonBytes') || 200000));
-      const includeHeaders = Boolean(cfg.get<boolean>('includeHeaders') ?? true);
-      const metadataInsideFence = Boolean(cfg.get<boolean>('metadataInsideFence') ?? false);
+export async function activate(context: vscode.ExtensionContext) {
+  await l10n.config({
+    fsPath: path.join(context.extensionPath, 'l10n', 'bundle.l10n.json'),
+  });
 
-      let selected: vscode.Uri[] = [];
-      if (Array.isArray(multi) && multi.length) {
-        selected = multi;
-      } else if (single) {
-        selected = [single];
+  const cmd = vscode.commands.registerCommand('multicopy.copyAsBundle', async (single?: vscode.Uri, multi?: vscode.Uri[]) => {
+    const cfg = vscode.workspace.getConfiguration('multicopy');
+    const maxBytes = Math.max(1024, Number(cfg.get<number>('maxBytes') || 20000000));
+    const separator = String(cfg.get<string>('separator') || '\n\n');
+    const ignoreGlobs = (cfg.get<string[]>('ignoreGlobs') || []).filter(Boolean);
+    const excludeMarkdown = Boolean(cfg.get<boolean>('excludeMarkdown') ?? true);
+    const maxJsonBytes = Math.max(1024, Number(cfg.get<number>('maxJsonBytes') || 200000));
+    const includeHeaders = Boolean(cfg.get<boolean>('includeHeaders') ?? true);
+    const metadataInsideFence = Boolean(cfg.get<boolean>('metadataInsideFence') ?? false);
+
+    let selected: vscode.Uri[] = [];
+    if (Array.isArray(multi) && multi.length) {
+      selected = multi;
+    } else if (single) {
+      selected = [single];
+    }
+    if (!selected.length) {
+      vscode.window.showWarningMessage(l10n.t('Nothing to copy after filters.'));
+      return;
+    }
+
+    const all = await flattenSelection(selected);
+    const files = filterIgnored(all, ignoreGlobs).sort((a, b) => a.fsPath.localeCompare(b.fsPath));
+    if (!files.length) {
+      vscode.window.showWarningMessage(l10n.t('Nothing to copy after filters.'));
+      return;
+    }
+
+    let total = 0;
+    const chunks: string[] = [];
+    let skippedBinary = 0;
+    let skippedExcluded = 0;
+    let truncated = false;
+
+    for (const uri of files) {
+      const content = await readText(uri);
+      if (content === null) {
+        skippedBinary++;
+        continue;
       }
-      if (!selected.length) {
-        vscode.window.showInformationMessage(
-          'No hay selección. Usa click derecho en el Explorador.',
-        );
-        return;
+
+      const ext = extFromPath(uri.fsPath);
+      if (excludeMarkdown && ext === 'md') {
+        skippedExcluded++;
+        continue;
       }
 
-      const all = await flattenSelection(selected);
-      const files = filterIgnored(all, ignoreGlobs).sort((a, b) =>
-        a.fsPath.localeCompare(b.fsPath),
-      );
-      if (!files.length) {
-        vscode.window.showWarningMessage('Nada que copiar tras aplicar filtros.');
-        return;
+      let sizeBytes = 0;
+      try {
+        const st = await vscode.workspace.fs.stat(uri);
+        sizeBytes = Number(st.size || 0);
+      } catch {
+        sizeBytes = new TextEncoder().encode(content).length;
       }
 
-      let total = 0;
-      const chunks: string[] = [];
-      let skippedBinary = 0;
-      let skippedExcluded = 0;
-      let truncated = false;
+      // ruta relativa al workspace
+      const relPath = vscode.workspace.asRelativePath(uri, false);
 
-      for (const uri of files) {
-        const content = await readText(uri);
-        if (content === null) {
-          skippedBinary++;
-          continue;
+      let body = content;
+      if (ext === 'json') {
+        const enc = new TextEncoder();
+        const dec = new TextDecoder();
+        const bytes = enc.encode(body);
+        if (bytes.length > maxJsonBytes) {
+          const slice = bytes.slice(0, Math.max(0, maxJsonBytes - 64));
+          body = dec.decode(slice) + '\n/* ...JSON truncado... */';
         }
+      }
 
-        const ext = extFromPath(uri.fsPath);
-        if (excludeMarkdown && ext === 'md') {
-          skippedExcluded++;
-          continue;
-        }
+      const fenceLang = fenceLangFromExt(ext);
+      const codeOpen = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
+      const codeClose = `\n\`\`\``;
+      const fileName = basename(uri.fsPath);
+      const meta = `- ${l10n.t('Name')}: \`${fileName}\`\n- ${l10n.t('Size')}: \`${sizeBytes} bytes\`\n- ${l10n.t('Relative path')}: \`${relPath}\`\n`;
+      let block: string;
+      if (includeHeaders) {
+        block = metadataInsideFence ? codeOpen + meta + body + codeClose : meta + codeOpen + body + codeClose;
+      } else {
+        block = codeOpen + body + codeClose;
+      }
+      const nextSize = new TextEncoder().encode(block + separator).length;
 
-        let sizeBytes = 0;
-        try {
-          const st = await vscode.workspace.fs.stat(uri);
-          sizeBytes = Number(st.size || 0);
-        } catch {
-          sizeBytes = new TextEncoder().encode(content).length;
-        }
-
-        // ruta relativa al workspace
-        const relPath = vscode.workspace.asRelativePath(uri, false);
-
-        let body = content;
-        if (ext === 'json') {
+      if (total + nextSize > maxBytes) {
+        // intentar meter truncado del último archivo si aún no hay nada
+        if (chunks.length === 0) {
+          // Construimos prefijo/sufijo según configuración para preservar formato en truncado
           const enc = new TextEncoder();
           const dec = new TextDecoder();
-          const bytes = enc.encode(body);
-          if (bytes.length > maxJsonBytes) {
-            const slice = bytes.slice(0, Math.max(0, maxJsonBytes - 64));
-            body = dec.decode(slice) + '\n/* ...JSON truncado... */';
+          const open = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
+          const prefix = includeHeaders ? (metadataInsideFence ? open + meta : meta + open) : open;
+          const suffixReal = `\n/* ...truncated... */` + codeClose;
+          const overhead = enc.encode(prefix).length + enc.encode(suffixReal).length;
+          const available = maxBytes - overhead;
+          if (available > 0) {
+            const raw = new TextEncoder().encode(body);
+            const slice = raw.slice(0, Math.max(0, available));
+            const bodyPart = dec.decode(slice);
+            const partial = prefix + bodyPart + suffixReal;
+            chunks.push(partial);
+            total = maxBytes;
+            truncated = true;
           }
         }
-
-        const fenceLang = fenceLangFromExt(ext);
-        const codeOpen = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
-        const codeClose = `\n\`\`\``;
-        const fileName = basename(uri.fsPath);
-        const meta = `- Nombre: \`${fileName}\`\n- Tamaño: \`${sizeBytes} bytes\`\n- Ruta relativa: \`${relPath}\`\n`;
-        let block: string;
-        if (includeHeaders) {
-          block = metadataInsideFence
-            ? codeOpen + meta + body + codeClose
-            : meta + codeOpen + body + codeClose;
-        } else {
-          block = codeOpen + body + codeClose;
-        }
-        const nextSize = new TextEncoder().encode(block + separator).length;
-
-        if (total + nextSize > maxBytes) {
-          // intentar meter truncado del último archivo si aún no hay nada
-          if (chunks.length === 0) {
-            // Construimos prefijo/sufijo según configuración para preservar formato en truncado
-            const enc = new TextEncoder();
-            const dec = new TextDecoder();
-            const open = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
-            const prefix = includeHeaders
-              ? metadataInsideFence
-                ? open + meta
-                : meta + open
-              : open;
-            const suffixReal = `\n/* ...truncado... */` + codeClose;
-            const overhead = enc.encode(prefix).length + enc.encode(suffixReal).length;
-            const available = maxBytes - overhead;
-            if (available > 0) {
-              const raw = new TextEncoder().encode(body);
-              const slice = raw.slice(0, Math.max(0, available));
-              const bodyPart = dec.decode(slice);
-              const partial = prefix + bodyPart + suffixReal;
-              chunks.push(partial);
-              total = maxBytes;
-              truncated = true;
-            }
-          }
-          truncated = true;
-          break;
-        }
-        chunks.push(block);
-        total += nextSize;
+        truncated = true;
+        break;
       }
+      chunks.push(block);
+      total += nextSize;
+    }
 
-      const finalText = chunks.join(separator);
-      if (!finalText) {
-        vscode.window.showWarningMessage('Nada copiado. Archivos binarios o límite muy bajo.');
-        return;
-      }
+    const finalText = chunks.join(separator);
+    if (!finalText) {
+      vscode.window.showWarningMessage(l10n.t('Nothing copied. Binary files or very low limit.'));
+      return;
+    }
 
-      await vscode.env.clipboard.writeText(finalText);
+    await vscode.env.clipboard.writeText(finalText);
 
-      const noteParts: string[] = [`Copiados ${chunks.length} archivo(s)`, `~${total} bytes`];
-      if (skippedBinary) noteParts.push(`${skippedBinary} omitido(s) por binarios`);
-      if (skippedExcluded) noteParts.push(`${skippedExcluded} omitido(s) por filtro`);
-      if (truncated) noteParts.push('contenido truncado por límite');
-      vscode.window.showInformationMessage(noteParts.join(' · '));
-    },
-  );
+    const noteParts: string[] = [l10n.t('Copied {0} file(s) · ~{1} bytes', chunks.length, total)];
+    if (skippedBinary) noteParts.push(l10n.t('{0} skipped (binary)', skippedBinary));
+    if (skippedExcluded) noteParts.push(l10n.t('{0} skipped (excluded)', skippedExcluded));
+    if (truncated) noteParts.push(l10n.t('content truncated by limit'));
+    vscode.window.showInformationMessage(noteParts.join(' · '));
+  });
 
   context.subscriptions.push(cmd);
 }

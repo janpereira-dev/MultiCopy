@@ -1,0 +1,15 @@
+{
+  "languageId": "es",
+  "contents": {
+    "No selection. Use Explorer context menu.": "No hay selección. Usa el menú contextual del Explorador.",
+    "Nothing to copy after filters.": "Nada que copiar tras aplicar filtros.",
+    "Nothing copied. Binary files or very low limit.": "Nada copiado. Archivos binarios o límite muy bajo.",
+    "Copied {0} file(s) · ~{1} bytes": "Copiados {0} archivo(s) · ~{1} bytes",
+    "{0} skipped (binary)": "{0} omitido(s) por binarios",
+    "{0} skipped (excluded)": "{0} omitido(s) por filtro",
+    "content truncated by limit": "contenido truncado por límite",
+    "Name": "Nombre",
+    "Size": "Tamaño",
+    "Relative path": "Ruta relativa"
+  }
+}

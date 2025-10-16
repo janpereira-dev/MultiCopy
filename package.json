@@ -1,10 +1,10 @@
 {
-  "name": "multicopy",
-  "displayName": "MultiCopy: copiar archivos en bloque",
+  "name": "multicopyneitor",
+  "displayName": "%ext.displayName%", "description": "%ext.description%",
   "publisher": "janpereira-dev",
   "version": "0.0.1",
   "icon": "media/logo.png",
-    "galleryBanner": {
+  "galleryBanner": {
     "color": "#C80000",
     "theme": "dark"
   },
@@ -17,7 +17,6 @@
     "url": "https://github.com/janpereira-dev/MultiCopy/issues"
   },
   "homepage": "https://github.com/janpereira-dev/MultiCopy#README.md",
-  "description": "Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un solo bloque de texto, incluyendo sus rutas y contenidos.",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -35,7 +34,17 @@
     "clipboard",
     "bundle",
     "files",
-    "explorer"
+    "explorer",
+    "multi",
+    "multiple",
+    "copy as bundle",
+    "copy multiple files",
+    "copy multiple folders",
+    "copy files with paths",
+    "copy folders with paths",
+    "copy files with contents",
+    "MultiCopy",
+    "MultiCopyneitor"
   ],
   "qna": false,
   "extensionKind": [
@@ -51,7 +60,7 @@
     "commands": [
       {
         "command": "multicopy.copyAsBundle",
-        "title": "Copiar selección como bloque"
+        "title": "%cmd.copyAsBundle%"
       }
     ],
     "menus": {
@@ -63,39 +72,39 @@
       ]
     },
     "configuration": {
-      "title": "MultiCopy",
+      "title": "%cfg.title%",
       "properties": {
         "multicopy.maxBytes": {
           "type": "number",
           "default": 20000000,
           "minimum": 1024,
-          "description": "Límite máximo de bytes a copiar en total."
+          "description": "%cfg.maxBytes.desc%"
         },
         "multicopy.separator": {
           "type": "string",
           "default": "\n\n",
-          "description": "Separador entre archivos."
+          "description": "%cfg.separator.desc%"
         },
         "multicopy.includeHeaders": {
           "type": "boolean",
           "default": true,
-          "description": "Incluir metadatos (Nombre/Tamaño/Ruta relativa) por archivo."
+          "description": "%cfg.includeHeaders.desc%"
         },
         "multicopy.metadataInsideFence": {
           "type": "boolean",
           "default": false,
-          "description": "Si es true, los metadatos se colocan dentro del bloque de código; si es false, afuera."
+          "description": "%cfg.metadataInsideFence.desc%"
         },
         "multicopy.excludeMarkdown": {
           "type": "boolean",
           "default": true,
-          "description": "Excluir archivos Markdown (.md) del copiado."
+          "description": "%cfg.excludeMarkdown.desc%"
         },
         "multicopy.maxJsonBytes": {
           "type": "number",
           "default": 200000,
           "minimum": 1024,
-          "description": "Tamaño máximo en bytes para incluir JSON completo; si se excede se truncará."
+          "description": "%cfg.maxJsonBytes.desc%"
         },
         "multicopy.ignoreGlobs": {
           "type": "array",
@@ -112,19 +121,21 @@
             "**/*.pdf",
             "**/*.zip"
           ],
-          "description": "Globs a ignorar."
+          "description": "%cfg.ignoreGlobs.desc%"
         }
       }
-    },
-    "keybindings": [
-      {
-        "command": "multicopy.copyAsBundle",
-        "key": "ctrl+alt+c",
-        "when": "filesExplorerFocus"
-      }
-    ]
+    }
   },
-  "files": ["out/**", "media/**", "README.md", "LICENSE", "package.json"],
+  "files": [
+    "out/**",
+    "media/**",
+    "l10n/**",
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "package.nls.json",
+    "package.nls.*.json"
+  ],
   "type": "commonjs",
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
@@ -135,9 +146,10 @@
     "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
+    "@vscode/l10n": "^0.0.18",
     "@vscode/test-electron": "^2.3.9",
     "@vscode/vsce": "^3.6.2",
-    "esbuild": "^0.25.10",
+    "esbuild": "^0.25.11",
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^4.4.4",
