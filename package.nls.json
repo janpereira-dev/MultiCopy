@@ -1,6 +1,6 @@
 {
   "cmd.copyAsBundle": "Copy selection as bundle",
-  "cfg.title": "MultiCopyneitor",
+  "cfg.title": "MultiCopynator",
   "cfg.maxBytes.desc": "Maximum total bytes to copy.",
   "cfg.separator.desc": "Separator between files.",
   "cfg.includeHeaders.desc": "Include metadata (Name/Size/Relative path) per file.",

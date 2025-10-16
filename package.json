@@ -1,5 +1,5 @@
 {
-  "name": "multicopyneitor",
+  "name": "multicopynator",
   "displayName": "%ext.displayName%", "description": "%ext.description%",
   "publisher": "janpereira-dev",
   "version": "0.0.1",
@@ -44,7 +44,7 @@
     "copy folders with paths",
     "copy files with contents",
     "MultiCopy",
-    "MultiCopyneitor"
+    "multicopynator"
   ],
   "qna": false,
   "extensionKind": [
