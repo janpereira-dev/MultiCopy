@@ -1,5 +1,9 @@
 # MultiCopynator — copy multiple files as one block
 
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
+[![Rating](https://vsmarketplacebadges.dev/rating-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
+
 VS Code extension that copies multiple files and folders as a single text block, including relative paths and content with language-aware code fences.
 
 In VS Code Explorer:
