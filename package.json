@@ -3,11 +3,11 @@
   "displayName": "%ext.displayName%",
   "description": "%ext.description%",
   "publisher": "janpereira-dev",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "icon": "media/logo.png",
   "galleryBanner": {
-    "color": "#C80000",
-    "theme": "dark"
+    "color": "#ADD8E6",
+    "theme": "light"
   },
   "license": "MIT",
   "repository": {
@@ -25,7 +25,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:multicopy.copyAsBundle",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",

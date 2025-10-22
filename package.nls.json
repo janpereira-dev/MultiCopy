@@ -8,6 +8,6 @@
   "cfg.excludeMarkdown.desc": "Exclude Markdown (.md) files from copying.",
   "cfg.maxJsonBytes.desc": "Max bytes to include full JSON; larger files will be truncated.",
   "cfg.ignoreGlobs.desc": "Glob patterns to ignore.",
-  "ext.displayName": "MultiCopyneitor: copy files as bundle",
+  "ext.displayName": "MultiCopynator: copy files as bundle",
   "ext.description": "VS Code extension to copy multiple files and folders as a single text block, including their paths and contents."
 }
