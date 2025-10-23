@@ -80,15 +80,6 @@ These settings live under `multicopy.*` in VS Code settings:
 
 - Marketplace: [janpereira-dev.multicopynator](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
 
-### Local install from source
-
-```powershell
-npm install
-npm run build
-npx vsce package   # generates the .vsix for manual install
-# In VS Code: Extensions → “Install from VSIX…” and pick the generated file
-```
-
 ## Localization
 
 The extension is localized (es, es-ES, pt-BR, pt-PT, en-US).
@@ -108,15 +99,6 @@ Works in untrusted workspaces. It only reads files to build the copied block.
 - Binary detection is heuristic; some unusual text files might be treated as binary.
 - Very low `maxBytes` values can result in a partial copy of the first file only.
 - Images and binaries are skipped by design; attach them separately if needed.
-
-## Contributing
-
-PRs and suggestions are welcome. Before opening a PR:
-
-```powershell
-npm run lint
-npm run build
-```
 
 ## License
 
@@ -200,15 +182,6 @@ Estos ajustes están bajo `multicopy.*` en la configuración de VS Code:
 
 - Marketplace: [janpereira-dev.multicopynator](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
 
-#### Instalación local desde fuente
-
-```powershell
-npm install
-npm run build
-npx vsce package   # genera el .vsix para instalar manualmente
-# En VS Code: Extensiones → “Install from VSIX…” y selecciona el archivo generado
-```
-
 ### Idiomas
 
 La extensión está localizada (es, es-ES, pt-BR, pt-PT, en-US).
@@ -228,15 +201,6 @@ Funciona en espacios no confiables. Solo lee archivos para construir el bloque a
 - La detección de binarios es heurística; archivos de texto con caracteres de control atípicos pueden considerarse binarios.
 - Si el límite `maxBytes` es muy bajo, podrías obtener solo un parcial del primer archivo.
 - Imágenes y binarios se omiten por diseño; si necesitas incluirlos, adjúntalos por separado.
-
-### Contribuir
-
-Las PRs y sugerencias son bienvenidas. Recomendado antes de abrir PR:
-
-```powershell
-npm run lint
-npm run build
-```
 
 ### Licencia
 

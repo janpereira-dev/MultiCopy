@@ -3,7 +3,7 @@
   "displayName": "%ext.displayName%",
   "description": "%ext.description%",
   "publisher": "janpereira-dev",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icon": "media/logo.png",
   "galleryBanner": {
     "color": "#ADD8E6",
@@ -28,7 +28,7 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
-  "preview": true,
+  "preview": false,
   "keywords": [
     "copy",
     "clipboard",
