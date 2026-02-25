@@ -1,207 +1,145 @@
-# MultiCopynator — copy multiple files as one block
+# MultiCopynator — copy files & folders in one click
 
 [![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
 [![Installs](https://vsmarketplacebadges.dev/installs-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
 [![Rating](https://vsmarketplacebadges.dev/rating-short/janpereira-dev.multicopynator.svg)](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
 
-VS Code extension that copies multiple files and folders as a single text block, including relative paths and content with language-aware code fences.
+> **Select files → right-click → paste anywhere with paths, metadata, and syntax highlighting. That's it.**
 
-In VS Code Explorer:
+Ever needed to share a batch of files in a GitHub issue, a PR review, or a chat with your team? Copying them one by one is painful. **MultiCopynator** turns any selection of files and folders into a single, clean, ready-to-paste text block — complete with relative paths and language-aware code fences.
 
-- Select one or more files and/or folders.
-- Right-click → “Copy selection as bundle”.
-- The result is copied to your clipboard with optional metadata and triple backtick code fences.
+## How to use
+
+1. In the **Explorer**, select one or more files and/or folders.
+2. Right-click → **"Copy selection as bundle"**.
+3. Paste wherever you need it — the result is already formatted.
 
 ## Example output
 
 ````text
-- Name: "src/extension.ts"
-- Size: "12345 bytes"
-- Relative path: "src/extension.ts"
+- Name: `extension.ts`
+- Size: `12345 bytes`
+- Relative path: `src/extension.ts`
 ```ts
-// file content…
+import * as vscode from 'vscode';
+// …file content
 ```
 
+- Name: `package.json`
+- Size: `890 bytes`
+- Relative path: `package.json`
 ```json
-{ "package": "content…" }
+{ "name": "my-project" }
 ```
 ````
 
-## Features
+## Why MultiCopynator?
 
-- Copy multiple files and folders into a single text output, sorted by path.
-- Language detection for code fences (```lang) based on file extension.
-- Automatically skips binary files.
-- Configurable glob filters (by default ignores node_modules, .git, images, PDFs, zips, etc.).
-- Total size limit to avoid huge pastes (with smart truncation of the last file if needed).
-- Configurable truncation for large JSON files.
-- Option to exclude Markdown files from the copy.
-- Optional per-file metadata (Name/Size/Relative path) outside or inside the code fence.
-- Copy summary after completion: file count, approx. bytes, and any skips/truncation.
-
-## Command
-
-- Explorer context menu: “Copy selection as bundle” (id: `multicopy.copyAsBundle`).
+- **One click, many files** — select as many files and folders as you want; they all end up in your clipboard as a single block.
+- **Syntax highlighting built-in** — code fences with the correct language tag are added automatically based on file extension (100+ extensions supported).
+- **Smart filtering** — binary files are detected and skipped. `node_modules`, `.git`, images, PDFs, and zips are ignored by default.
+- **Safe for large projects** — a configurable byte limit prevents accidental huge pastes, with intelligent truncation so you never get a broken output.
+- **JSON-aware** — large JSON files are truncated independently so they don't eat your entire budget.
+- **Metadata at a glance** — each file shows its name, size, and relative path. You choose whether metadata goes inside or outside the code fence.
+- **Markdown-friendly** — `.md` files are excluded by default to avoid nested fence conflicts, but you can include them if you want.
+- **Runs everywhere** — works in untrusted workspaces (read-only by design) and supports multiple languages (English, Spanish, Portuguese).
 
 ## Settings
 
-These settings live under `multicopy.*` in VS Code settings:
+All settings are under `multicopy.*`:
 
-- `multicopy.maxBytes` (number, default 20000000)
-  - Maximum total bytes to copy. If exceeded, the last file may be truncated.
+| Setting               | Type     | Default       | Description                                                                  |
+| --------------------- | -------- | ------------- | ---------------------------------------------------------------------------- |
+| `maxBytes`            | number   | `20000000`    | Maximum total bytes to copy. The last file is truncated smartly if exceeded. |
+| `separator`           | string   | `"\n\n"`      | Text placed between each file block.                                         |
+| `includeHeaders`      | boolean  | `true`        | Show per-file metadata (Name, Size, Relative path).                          |
+| `metadataInsideFence` | boolean  | `false`       | Place metadata inside the code fence instead of outside.                     |
+| `excludeMarkdown`     | boolean  | `true`        | Skip `.md` files when copying.                                               |
+| `maxJsonBytes`        | number   | `200000`      | Max size for full JSON inclusion; larger files are truncated with a marker.  |
+| `ignoreGlobs`         | string[] | _(see below)_ | Glob patterns to ignore.                                                     |
 
-- `multicopy.separator` (string, default "\n\n")
-  - Separator between files in the final block.
-
-- `multicopy.includeHeaders` (boolean, default true)
-  - Include per-file metadata: Name, Size, Relative path.
-
-- `multicopy.metadataInsideFence` (boolean, default false)
-  - If true, metadata is placed inside the code fence; if false, outside.
-
-- `multicopy.excludeMarkdown` (boolean, default true)
-  - Exclude `.md` files from the copy.
-
-- `multicopy.maxJsonBytes` (number, default 200000)
-  - Maximum size for including full JSON. Larger files are truncated and marked accordingly.
-
-- `multicopy.ignoreGlobs` (array of strings)
-  - Glob patterns to ignore. By default: `**/node_modules/**`, `**/.git/**`, `**/*.png`, `**/*.jpg`, `**/*.jpeg`, `**/*.gif`, `**/*.pdf`, `**/*.zip`.
-
-## How it works
-
-- Folders are expanded recursively when selected.
-- Output is sorted alphabetically by path for stable results.
-- Binary detection uses a simple heuristic and skips likely-binary files.
-- JSON truncation is controlled by `multicopy.maxJsonBytes`, independent from the global `multicopy.maxBytes` limit.
-- If nothing remains after filters (e.g., binary or ignored by globs), a warning is shown.
-
-## Installation
-
-- Marketplace: [janpereira-dev.multicopynator](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
-
-## Localization
-
-The extension is localized (es, es-ES, pt-BR, pt-PT, en-US).
-
-## Untrusted workspaces
-
-Works in untrusted workspaces. It only reads files to build the copied block.
+**Default ignore patterns:** `**/node_modules/**`, `**/.git/**`, `**/*.png`, `**/*.jpg`, `**/*.jpeg`, `**/*.gif`, `**/*.pdf`, `**/*.zip`
 
 ## Tips
 
-- Great for sharing code context in issues, PRs, or chat, keeping paths and syntax highlighting.
-- Adjust `maxBytes` for larger shares; mind the target platform limits where you paste.
-- Customize `ignoreGlobs` to filter artifacts (dist, build, .lock, etc.).
+- Perfect for pasting code context into **GitHub issues, PR descriptions, ChatGPT, Copilot Chat**, or any Markdown-aware surface.
+- Bump `maxBytes` when sharing large codebases; keep your target platform's paste limit in mind.
+- Add patterns like `**/dist/**`, `**/*.lock` to `ignoreGlobs` to keep the output lean.
 
 ## Known limitations
 
-- Binary detection is heuristic; some unusual text files might be treated as binary.
-- Very low `maxBytes` values can result in a partial copy of the first file only.
+- Binary detection is heuristic — unusual text files with many control characters may be treated as binary.
+- Very low `maxBytes` values may result in only a partial copy of the first file.
 - Images and binaries are skipped by design; attach them separately if needed.
+
+## Installation
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator) or search **MultiCopynator** in the Extensions panel.
 
 ## License
 
-MIT © 2024–present — see `LICENSE`.
+MIT © 2025–present Jan Pereira — see [LICENSE](LICENSE).
 
-## Español
+---
 
-Extensión para Visual Studio Code que permite copiar múltiples archivos y carpetas como un único bloque de texto, incluyendo rutas relativas y contenidos con resaltado por lenguaje.
+<details>
+<summary><strong>🇪🇸 Español</strong></summary>
 
-En el Explorador de VS Code:
+## MultiCopynator — copia archivos y carpetas en un solo clic
 
-- Selecciona uno o varios archivos y/o carpetas.
-- Clic derecho → “Copiar selección como bloque”.
-- El resultado se copia al portapapeles con metadatos opcionales y bloques de código con triple acento grave.
+> **Selecciona archivos → clic derecho → pega donde quieras con rutas, metadatos y resaltado de sintaxis.**
 
-### Ejemplo de salida
+¿Alguna vez necesitaste compartir varios archivos en un issue, un PR o un chat con tu equipo? Copiarlos uno por uno es tedioso. **MultiCopynator** convierte cualquier selección de archivos y carpetas en un único bloque de texto limpio y listo para pegar, con rutas relativas y bloques de código con detección de lenguaje.
 
-````text
-- Name: "src/extension.ts"
-- Size: "12345 bytes"
-- Relative path: "src/extension.ts"
-```ts
-// contenido del archivo…
-```
+### Cómo usar
 
-```json
-{ "package": "contenido…" }
-```
-````
+1. En el **Explorador**, selecciona uno o varios archivos y/o carpetas.
+2. Clic derecho → **"Copiar selección como bloque"**.
+3. Pega donde lo necesites — el resultado ya viene formateado.
 
-### Características
+### ¿Por qué MultiCopynator?
 
-- Copia múltiples archivos y carpetas como un texto único, ordenado por ruta.
-- Detección de lenguaje para las cercas de código (```lang) según la extensión.
-- Omite archivos binarios automáticamente.
-- Filtrado por patrones glob configurables (por defecto ignora node_modules, .git, imágenes, PDFs, zips, etc.).
-- Límite total de bytes para evitar desbordes (con truncado inteligente del último archivo si es necesario).
-- Truncado configurable para JSON grande (evita pegar JSONs enormes completos).
-- Posibilidad de excluir Markdown del copiado.
-- Metadatos opcionales por archivo (Nombre/Tamaño/Ruta relativa) fuera o dentro del bloque de código.
-- Mensaje de estado tras copiar: cuenta de archivos, bytes aproximados y avisos (saltados/truncados).
-
-### Comando
-
-- Menú contextual del Explorador: “Copiar selección como bloque” (id: `multicopy.copyAsBundle`).
+- **Un clic, muchos archivos** — selecciona los que quieras; todos quedan en tu portapapeles como un solo bloque.
+- **Resaltado de sintaxis automático** — se añaden bloques de código con el lenguaje correcto según la extensión del archivo (+100 extensiones soportadas).
+- **Filtrado inteligente** — los binarios se detectan y se saltan. `node_modules`, `.git`, imágenes, PDFs y zips se ignoran por defecto.
+- **Seguro para proyectos grandes** — un límite de bytes configurable previene pegados gigantes accidentales, con truncado inteligente para que nunca obtengas un resultado roto.
+- **Consciente de JSON** — los archivos JSON grandes se truncan de forma independiente para que no consuman todo tu presupuesto de bytes.
+- **Metadatos de un vistazo** — cada archivo muestra nombre, tamaño y ruta relativa. Tú eliges si los metadatos van dentro o fuera del bloque de código.
+- **Amigable con Markdown** — los archivos `.md` se excluyen por defecto para evitar conflictos de cercas anidadas, pero puedes incluirlos si quieres.
+- **Funciona en todas partes** — compatible con espacios de trabajo no confiables (solo lectura) y disponible en varios idiomas (inglés, español, portugués).
 
 ### Configuración
 
-Estos ajustes están bajo `multicopy.*` en la configuración de VS Code:
+Todos los ajustes están bajo `multicopy.*`:
 
-- `multicopy.maxBytes` (number, por defecto 20000000)
-  - Límite máximo de bytes del bloque total a copiar. Si se excede, el último archivo puede truncarse.
+| Ajuste                | Tipo     | Por defecto    | Descripción                                                                                  |
+| --------------------- | -------- | -------------- | -------------------------------------------------------------------------------------------- |
+| `maxBytes`            | number   | `20000000`     | Máximo de bytes totales a copiar. El último archivo se trunca inteligentemente si se excede. |
+| `separator`           | string   | `"\n\n"`       | Texto separador entre cada bloque de archivo.                                                |
+| `includeHeaders`      | boolean  | `true`         | Mostrar metadatos por archivo (Nombre, Tamaño, Ruta relativa).                               |
+| `metadataInsideFence` | boolean  | `false`        | Ubicar los metadatos dentro del bloque de código en lugar de fuera.                          |
+| `excludeMarkdown`     | boolean  | `true`         | Omitir archivos `.md` al copiar.                                                             |
+| `maxJsonBytes`        | number   | `200000`       | Tamaño máximo para incluir JSON completo; los más grandes se truncan con una marca.          |
+| `ignoreGlobs`         | string[] | _(ver arriba)_ | Patrones glob a ignorar.                                                                     |
 
-- `multicopy.separator` (string, por defecto "\n\n")
-  - Texto separador entre cada archivo en el bloque final.
+### Consejos
 
-- `multicopy.includeHeaders` (boolean, por defecto true)
-  - Incluye metadatos por archivo: Nombre, Tamaño y Ruta relativa.
-
-- `multicopy.metadataInsideFence` (boolean, por defecto false)
-  - Si es true, los metadatos se colocan dentro de la cerca de código; si es false, fuera.
-
-- `multicopy.excludeMarkdown` (boolean, por defecto true)
-  - Excluye archivos `.md` del copiado.
-
-- `multicopy.maxJsonBytes` (number, por defecto 200000)
-  - Tamaño máximo para incluir JSON completo. Si el archivo JSON sobrepasa este límite, se corta y se añade una marca de truncado.
-
-- `multicopy.ignoreGlobs` (array de cadenas)
-  - Patrones glob a ignorar. Por defecto incluye: `**/node_modules/**`, `**/.git/**`, `**/*.png`, `**/*.jpg`, `**/*.jpeg`, `**/*.gif`, `**/*.pdf`, `**/*.zip`.
-
-### Detalles de funcionamiento
-
-- Los archivos se expanden al seleccionar carpetas, y se listan de forma recursiva.
-- El orden final está alfabetizado por ruta para obtener salidas consistentes.
-- Detección de binarios por inspección del contenido; si parece binario, se omite.
-- Para JSON, el truncado respeta `multicopy.maxJsonBytes` de forma independiente al límite total `multicopy.maxBytes`.
-- Cuando no hay nada que copiar tras filtros (p. ej., todo binario o globs), se muestra un aviso.
-
-### Instalación
-
-- Marketplace: [janpereira-dev.multicopynator](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator)
-
-### Idiomas
-
-La extensión está localizada (es, es-ES, pt-BR, pt-PT, en-US).
-
-### Permisos y espacios de trabajo no confiables
-
-Funciona en espacios no confiables. Solo lee archivos para construir el bloque a copiar.
-
-### Sugerencias de uso
-
-- Útil para compartir contextos de código en issues, PRs o chats, conservando rutas y resaltado.
-- Ajusta `maxBytes` si planeas compartir repos grandes; ten en cuenta las restricciones de cada plataforma donde lo pegarás.
-- Personaliza `ignoreGlobs` para filtrar artefactos (dist, build, .lock, etc.).
+- Ideal para pegar contexto de código en **issues de GitHub, descripciones de PR, ChatGPT, Copilot Chat** o cualquier superficie que entienda Markdown.
+- Aumenta `maxBytes` cuando compartas repositorios grandes; ten en cuenta el límite de pegado de la plataforma destino.
+- Agrega patrones como `**/dist/**`, `**/*.lock` a `ignoreGlobs` para mantener la salida limpia.
 
 ### Limitaciones conocidas
 
-- La detección de binarios es heurística; archivos de texto con caracteres de control atípicos pueden considerarse binarios.
-- Si el límite `maxBytes` es muy bajo, podrías obtener solo un parcial del primer archivo.
-- Imágenes y binarios se omiten por diseño; si necesitas incluirlos, adjúntalos por separado.
+- La detección de binarios es heurística — archivos de texto con muchos caracteres de control pueden tratarse como binarios.
+- Valores muy bajos de `maxBytes` pueden resultar en solo una copia parcial del primer archivo.
+- Imágenes y binarios se omiten por diseño; adjúntalos por separado si los necesitas.
+
+### Instalación
+
+Instala desde el [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=janpereira-dev.multicopynator) o busca **MultiCopynator** en el panel de Extensiones.
 
 ### Licencia
 
-MIT © 2024–presente — ver `LICENSE`.
+MIT © 2025–presente Jan Pereira — ver [LICENSE](LICENSE).
+
+</details>

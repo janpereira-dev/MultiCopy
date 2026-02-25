@@ -1,129 +1,154 @@
-import { basename } from 'path';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
 import * as l10n from '@vscode/l10n';
 import { Minimatch } from 'minimatch';
 
-function extFromPath(path: string): string {
-  const ext = path.split('.').pop()?.toLowerCase() || '';
-  return ext;
+// ── Constantes reutilizables (se crean una sola vez) ──────────────────────
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder('utf-8', { fatal: false });
+
+/** Mapa extensión → lenguaje para bloques de código Markdown */
+const FENCE_LANG_MAP: Readonly<Record<string, string>> = {
+  // JS/TS
+  ts: 'ts',
+  tsx: 'ts',
+  js: 'javascript',
+  jsx: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  json: 'json',
+  jsonc: 'jsonc',
+
+  // Markdown y variantes
+  md: 'markdown',
+  markdown: 'markdown',
+  mdown: 'markdown',
+  mkd: 'markdown',
+  mkdn: 'markdown',
+  mdwn: 'markdown',
+  mdtxt: 'markdown',
+  mdtext: 'markdown',
+  rmd: 'markdown',
+  mdx: 'mdx',
+
+  // Web
+  html: 'html',
+  htm: 'html',
+  css: 'css',
+  scss: 'scss',
+  less: 'less',
+
+  // Shell / scripts
+  sh: 'bash',
+  bash: 'bash',
+  zsh: 'bash',
+  ps1: 'powershell',
+  ps: 'powershell',
+
+  // YAML
+  yml: 'yaml',
+  yaml: 'yaml',
+
+  // Python / Java
+  py: 'python',
+  java: 'java',
+
+  // C/C++/C#
+  c: 'c',
+  h: 'c',
+  cpp: 'cpp',
+  cxx: 'cpp',
+  cc: 'cpp',
+  hpp: 'cpp',
+  hh: 'cpp',
+  hxx: 'cpp',
+  cs: 'csharp',
+
+  // Otros lenguajes populares
+  go: 'go',
+  rs: 'rust',
+  kt: 'kotlin',
+  kts: 'kotlin',
+  swift: 'swift',
+  rb: 'ruby',
+  php: 'php',
+  scala: 'scala',
+  dart: 'dart',
+  lua: 'lua',
+  r: 'r',
+  pl: 'perl',
+  pm: 'perl',
+  ex: 'elixir',
+  exs: 'elixir',
+  erl: 'erlang',
+  sql: 'sql',
+  toml: 'toml',
+  ini: 'ini',
+  conf: 'ini',
+  cfg: 'ini',
+
+  // Frontend frameworks
+  vue: 'vue',
+  svelte: 'svelte',
+  astro: 'astro',
+
+  // Infra/CI
+  dockerfile: 'dockerfile',
+  tf: 'hcl',
+  hcl: 'hcl',
+};
+
+const VALID_EXT_RE = /^[a-z0-9+-]+$/i;
+
+// ── Utilidades ────────────────────────────────────────────────────────────
+
+/** Extrae la extensión de un path de forma segura usando path.extname */
+function extFromPath(filePath: string): string {
+  const ext = path.extname(filePath);
+  // extname devuelve ".ts" → eliminamos el punto; sin extensión → ""
+  return ext ? ext.slice(1).toLowerCase() : '';
 }
 
 function fenceLangFromExt(ext: string): string {
-  const map: Record<string, string> = {
-    // JS/TS
-    ts: 'ts',
-    tsx: 'ts',
-    js: 'javascript',
-    jsx: 'javascript',
-    mjs: 'javascript',
-    cjs: 'javascript',
-    json: 'json',
-    jsonc: 'jsonc',
-
-    // Markdown y variantes
-    md: 'markdown',
-    markdown: 'markdown',
-    mdown: 'markdown',
-    mkd: 'markdown',
-    mkdn: 'markdown',
-    mdwn: 'markdown',
-    mdtxt: 'markdown',
-    mdtext: 'markdown',
-    rmd: 'markdown',
-    mdx: 'mdx',
-
-    // Web
-    html: 'html',
-    htm: 'html',
-    css: 'css',
-    scss: 'scss',
-    less: 'less',
-
-    // Shell / scripts
-    sh: 'bash',
-    bash: 'bash',
-    zsh: 'bash',
-    ps1: 'powershell',
-    ps: 'powershell',
-
-    // YAML
-    yml: 'yaml',
-    yaml: 'yaml',
-
-    // Python / Java
-    py: 'python',
-    java: 'java',
-
-    // C/C++/C#
-    c: 'c',
-    h: 'c',
-    cpp: 'cpp',
-    cxx: 'cpp',
-    cc: 'cpp',
-    hpp: 'cpp',
-    hh: 'cpp',
-    hxx: 'cpp',
-    cs: 'csharp',
-
-    // Otros lenguajes populares
-    go: 'go',
-    rs: 'rust',
-    kt: 'kotlin',
-    kts: 'kotlin',
-    swift: 'swift',
-    rb: 'ruby',
-    php: 'php',
-    scala: 'scala',
-    dart: 'dart',
-    lua: 'lua',
-    r: 'r',
-    pl: 'perl',
-    pm: 'perl',
-    ex: 'elixir',
-    exs: 'elixir',
-    erl: 'erlang',
-    sql: 'sql',
-    toml: 'toml',
-    ini: 'ini',
-    conf: 'ini',
-    cfg: 'ini',
-
-    // Frontend frameworks
-    vue: 'vue',
-    svelte: 'svelte',
-    astro: 'astro',
-
-    // Infra/CI
-    dockerfile: 'dockerfile',
-    tf: 'hcl',
-    hcl: 'hcl',
-  };
-  if (map[ext]) return map[ext];
-  if (/^[a-z0-9+-]+$/i.test(ext)) return ext.toLowerCase();
+  const lang = FENCE_LANG_MAP[ext];
+  if (lang) return lang;
+  if (ext && VALID_EXT_RE.test(ext)) return ext.toLowerCase();
   return 'txt';
 }
 
+/**
+ * Detecta si un buffer parece binario en un solo pase.
+ * Retorna true si encuentra un byte nulo o >20% de caracteres de control.
+ */
 function seemsBinary(buf: Uint8Array): boolean {
   const len = Math.min(buf.length, 1024);
-  for (let i = 0; i < len; i++) {
-    const b = buf[i];
-    if (b === 0) return true;
-  }
+  if (len === 0) return false;
   let ctrls = 0;
   for (let i = 0; i < len; i++) {
     const b = buf[i];
+    if (b === 0) return true;
     if (b < 9 || (b > 13 && b < 32)) ctrls++;
   }
   return ctrls > len * 0.2;
 }
 
-async function readText(uri: vscode.Uri): Promise<string | null> {
+/** Resultado de leer un archivo: contenido de texto + tamaño en bytes */
+interface FileReadResult {
+  text: string;
+  sizeBytes: number;
+}
+
+/**
+ * Lee un archivo y devuelve texto + tamaño. Retorna null si es binario o hay error.
+ * Evita la doble lectura (readFile + stat) obteniendo el tamaño del buffer leído.
+ */
+async function readText(uri: vscode.Uri): Promise<FileReadResult | null> {
   try {
     const data = await vscode.workspace.fs.readFile(uri);
     if (seemsBinary(data)) return null;
-    return new TextDecoder('utf-8', { fatal: false }).decode(data);
+    return { text: decoder.decode(data), sizeBytes: data.byteLength };
   } catch {
     return null;
   }
@@ -132,20 +157,39 @@ async function readText(uri: vscode.Uri): Promise<string | null> {
 function filterIgnored(uris: vscode.Uri[], ignoreGlobs: string[]): vscode.Uri[] {
   if (ignoreGlobs.length === 0) return uris;
   const matchers = ignoreGlobs.map((g) => new Minimatch(g, { dot: true, nocase: true, nocomment: true }));
-  return uris.filter((u) => !matchers.some((mm) => mm.match(u.fsPath.split('\\').join('/'))));
+  return uris.filter((u) => !matchers.some((mm) => mm.match(u.fsPath.replace(/\\/g, '/'))));
 }
 
+/**
+ * Expande recursivamente directorios a archivos individuales.
+ * Maneja archivos, directorios y symlinks correctamente.
+ * Paraleliza la lectura de entradas de cada directorio.
+ */
 async function flattenSelection(uris: vscode.Uri[]): Promise<vscode.Uri[]> {
   const out: vscode.Uri[] = [];
-  for (const uri of uris) {
-    const stat = await vscode.workspace.fs.stat(uri);
-    if (stat.type === vscode.FileType.File) {
-      out.push(uri);
-    } else if (stat.type === vscode.FileType.Directory) {
-      const entries = await vscode.workspace.fs.readDirectory(uri);
-      const children = entries.map(([name]) => vscode.Uri.joinPath(uri, name));
-      out.push(...(await flattenSelection(children)));
-    }
+  // Procesar URIs en paralelo para mejorar rendimiento
+  const results = await Promise.all(
+    uris.map(async (uri): Promise<vscode.Uri[]> => {
+      let stat: vscode.FileStat;
+      try {
+        stat = await vscode.workspace.fs.stat(uri);
+      } catch {
+        return []; // archivo inaccesible, ignorar
+      }
+      const type = stat.type & ~vscode.FileType.SymbolicLink; // resolver symlinks
+      if (type === vscode.FileType.File) {
+        return [uri];
+      }
+      if (type === vscode.FileType.Directory) {
+        const entries = await vscode.workspace.fs.readDirectory(uri);
+        const children = entries.map(([name]) => vscode.Uri.joinPath(uri, name));
+        return flattenSelection(children);
+      }
+      return [];
+    }),
+  );
+  for (const batch of results) {
+    out.push(...batch);
   }
   return out;
 }
@@ -189,9 +233,19 @@ export async function activate(context: vscode.ExtensionContext) {
     let skippedExcluded = 0;
     let truncated = false;
 
-    for (const uri of files) {
-      const content = await readText(uri);
-      if (content === null) {
+    // Leer todos los archivos en paralelo (en lotes para no saturar I/O)
+    const BATCH_SIZE = 20;
+    const fileResults: (FileReadResult | null)[] = [];
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const batch = files.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map((uri) => readText(uri)));
+      fileResults.push(...results);
+    }
+
+    for (let idx = 0; idx < files.length; idx++) {
+      const uri = files[idx];
+      const result = fileResults[idx];
+      if (result === null) {
         skippedBinary++;
         continue;
       }
@@ -202,32 +256,22 @@ export async function activate(context: vscode.ExtensionContext) {
         continue;
       }
 
-      let sizeBytes = 0;
-      try {
-        const st = await vscode.workspace.fs.stat(uri);
-        sizeBytes = Number(st.size || 0);
-      } catch {
-        sizeBytes = new TextEncoder().encode(content).length;
-      }
-
-      // ruta relativa al workspace
+      const { text: content, sizeBytes } = result;
       const relPath = vscode.workspace.asRelativePath(uri, false);
 
       let body = content;
       if (ext === 'json') {
-        const enc = new TextEncoder();
-        const dec = new TextDecoder();
-        const bytes = enc.encode(body);
+        const bytes = encoder.encode(body);
         if (bytes.length > maxJsonBytes) {
           const slice = bytes.slice(0, Math.max(0, maxJsonBytes - 64));
-          body = dec.decode(slice) + '\n/* ...JSON truncado... */';
+          body = decoder.decode(slice) + '\n/* ...JSON truncado... */';
         }
       }
 
       const fenceLang = fenceLangFromExt(ext);
-      const codeOpen = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
+      const codeOpen = `\`\`\`${fenceLang}\n`;
       const codeClose = `\n\`\`\``;
-      const fileName = basename(uri.fsPath);
+      const fileName = path.basename(uri.fsPath);
       const meta = `- ${l10n.t('Name')}: \`${fileName}\`\n- ${l10n.t('Size')}: \`${sizeBytes} bytes\`\n- ${l10n.t('Relative path')}: \`${relPath}\`\n`;
       let block: string;
       if (includeHeaders) {
@@ -235,25 +279,19 @@ export async function activate(context: vscode.ExtensionContext) {
       } else {
         block = codeOpen + body + codeClose;
       }
-      const nextSize = new TextEncoder().encode(block + separator).length;
+      const nextSize = encoder.encode(block + separator).length;
 
       if (total + nextSize > maxBytes) {
-        // intentar meter truncado del último archivo si aún no hay nada
         if (chunks.length === 0) {
-          // Construimos prefijo/sufijo según configuración para preservar formato en truncado
-          const enc = new TextEncoder();
-          const dec = new TextDecoder();
-          const open = fenceLang ? `\`\`\`${fenceLang}\n` : `\`\`\`\n`;
-          const prefix = includeHeaders ? (metadataInsideFence ? open + meta : meta + open) : open;
+          const prefix = includeHeaders ? (metadataInsideFence ? codeOpen + meta : meta + codeOpen) : codeOpen;
           const suffixReal = `\n/* ...truncated... */` + codeClose;
-          const overhead = enc.encode(prefix).length + enc.encode(suffixReal).length;
+          const overhead = encoder.encode(prefix).length + encoder.encode(suffixReal).length;
           const available = maxBytes - overhead;
           if (available > 0) {
-            const raw = new TextEncoder().encode(body);
+            const raw = encoder.encode(body);
             const slice = raw.slice(0, Math.max(0, available));
-            const bodyPart = dec.decode(slice);
-            const partial = prefix + bodyPart + suffixReal;
-            chunks.push(partial);
+            const bodyPart = decoder.decode(slice);
+            chunks.push(prefix + bodyPart + suffixReal);
             total = maxBytes;
             truncated = true;
           }
