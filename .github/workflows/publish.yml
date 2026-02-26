@@ -32,7 +32,7 @@ jobs:
           git push
       - name: Get extension version
         id: ext_version
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: node -e "console.log('version=' + require('./package.json').version)" >> "$GITHUB_OUTPUT"
       - run: npm run build
       - run: npx @vscode/vsce package -o multicopynator.vsix
       - uses: actions/upload-artifact@v4
